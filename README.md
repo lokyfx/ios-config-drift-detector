@@ -126,21 +126,27 @@ Set up a virtual environment, add your router credentials, and capture a golden 
    
 2. Clone the repo
    ```sh
-   git clone [https://github.com/your_username/netdevops-config-drift.git](https://github.com/your_username/netdevops-config-drift.git)
-   cd netdevops-config-drift
+   git clone https://github.com/lokyfx/ios-config-drift-detector.git
+   cd ios-config-drift-detector
    ```
-3. Install NPM packages
+3. Create and activate a virtual environment (.venv) so packages stay isolated from your system Python
    ```sh
-   npm install
+   python3 -m venv .venv
+   source .venv/bin/activate
    ```
-4. Enter your API in `config.js`
-   ```js
-   const API_KEY = 'ENTER YOUR API';
-   ```
-5. Change git remote url to avoid accidental pushes to base project
+4. Upgrade pip and install the required packages (netmiko pulls in paramiko, and python-dotenv loads .env variables)
    ```sh
-   git remote set-url origin github_username/repo_name
-   git remote -v # confirm the changes
+   pip install --upgrade pip
+   pip install netmiko python-dotenv
+   ```
+5. Create a .env file in the project root with your router SSH password
+   ```py
+   SSH_KEY_R1=your_router_ssh_password
+   ```
+6. Verify SSH reachability to R1 and save your initial golden baseline configuration
+   ```sh
+   python3 get_config.py
+   cp r1_running_config.cfg golden_config.cfg
    ```
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
@@ -150,90 +156,83 @@ Set up a virtual environment, add your router credentials, and capture a golden 
 <!-- USAGE EXAMPLES -->
 ## Usage
 
-Use this space to show useful examples of how a project can be used. Additional screenshots, code examples and demos work well in this space. You may also link to more resources.
+Before running the scripts, make sure the target Cisco IOSv device has IP reachability from your host and SSHv2 enabled with local authentication, then capture a golden baseline and run drift checks.
 
-_For more examples, please refer to the [Documentation](https://example.com)_
+### 1.0 GNS3 Lab Setup (`R1` IOSv over `virbr0` NAT)
+
+In GNS3, connect `R1`'s management/uplink interface (`GigabitEthernet0/0`) to a Cloud/NAT node bridged to `virbr0` (`192.168.122.0/24`), where the host/gateway is typically `192.168.122.1`.
+
+Based on the lab `running-config` (`R1`), the core SSH and IP settings look like this:
+
+```ios
+hostname R1
+ip domain name lab.local
+!
+username admin privilege 15 secret <your_password>
+!
+interface GigabitEthernet0/0
+ ip address 192.168.122.10 255.255.255.0
+ no shutdown
+!
+ip route 0.0.0.0 0.0.0.0 192.168.122.1
+ip ssh version 2
+!
+line vty 0 4
+ login local
+ transport input ssh
+```
+
+When setting up a fresh IOSv node, configure the interface IP and default route, set a domain name (ip domain name ...), generate an RSA key pair in global config mode (crypto key generate rsa modulus 2048), create a privilege-15 local account (username admin privilege 15 secret ...), and restrict VTY lines to transport input ssh with login local. Make sure the password matches SSH_KEY_R1 in .env.
+
+### 1.1 Real-World / Production Router Usage
+The same workflow applies to a physical or virtual router outside GNS3 (for example, a lab/branch IOSv or IOS device on a management VLAN
+
+#### IMPORTANT
+Review `legacy SSH compatibility`: The `Paramiko SHA-1` / `ssh-rsa` fallback in get_config.py is aimed at older IOSv images; if connecting to newer `IOS/IOS-XE` devices with modern KEX and host-key algorithms, you may not need it or can disable/remove it per your security policy.
+
+### 2 Running the Full Drift Check (run.py)
+Run both steps in order with a single command:
+
+```sh
+python3 run.py
+```
+
+### Running Scripts Individually
+You can also run each stage on its own while debugging or testing config changes:
+
+Pull the current running-config from R1 into r1_running_config.cfg
+```sh
+python3 get_config.py
+```
+Compare r1_running_config.cfg against golden_config.cfg
+```sh
+python3 drift_checker.py
+```
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
 
-
-<!-- ROADMAP -->
-## Roadmap
-
-- [x] Add Changelog
-- [x] Add back to top links
-- [ ] Add Additional Templates w/ Examples
-- [ ] Add "components" document to easily copy & paste sections of the readme
-- [ ] Multi-language Support
-    - [ ] Chinese
-    - [ ] Spanish
-
-See the [open issues](https://github.com/othneildrew/Best-README-Template/issues) for a full list of proposed features (and known issues).
-
-<p align="right">(<a href="#readme-top">back to top</a>)</p>
-
-
-
-<!-- CONTRIBUTING -->
-## Contributing
-
-Contributions are what make the open source community such an amazing place to learn, inspire, and create. Any contributions you make are **greatly appreciated**.
-
-If you have a suggestion that would make this better, please fork the repo and create a pull request. You can also simply open an issue with the tag "enhancement".
-Don't forget to give the project a star! Thanks again!
-
-1. Fork the Project
-2. Create your Feature Branch (`git checkout -b feature/AmazingFeature`)
-3. Commit your Changes (`git commit -m 'Add some AmazingFeature'`)
-4. Push to the Branch (`git push origin feature/AmazingFeature`)
-5. Open a Pull Request
-
-### Top contributors:
-
-<a href="https://github.com/othneildrew/Best-README-Template/graphs/contributors">
-  <img src="https://contrib.rocks/image?repo=othneildrew/Best-README-Template" alt="contrib.rocks image" />
-</a>
-
-<p align="right">(<a href="#readme-top">back to top</a>)</p>
+<!--
 
 
 
 <!-- LICENSE -->
 ## License
 
-Distributed under the Unlicense License. See `LICENSE.txt` for more information.
+Distributed under the Unlicense License.
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
-
 
 
 <!-- CONTACT -->
 ## Contact
 
-Your Name - [@your_twitter](https://twitter.com/your_username) - email@example.com
+Email - lokodiattila@gmail.com
 
-Project Link: [https://github.com/your_username/repo_name](https://github.com/your_username/repo_name)
-
-<p align="right">(<a href="#readme-top">back to top</a>)</p>
-
-
-
-<!-- ACKNOWLEDGMENTS -->
-## Acknowledgments
-
-Use this space to list resources you find helpful and would like to give credit to. I've included a few of my favorites to kick things off!
-
-* [Choose an Open Source License](https://choosealicense.com)
-* [GitHub Emoji Cheat Sheet](https://www.webpagefx.com/tools/emoji-cheat-sheet)
-* [Malven's Flexbox Cheatsheet](https://flexbox.malven.co/)
-* [Malven's Grid Cheatsheet](https://grid.malven.co/)
-* [Img Shields](https://shields.io)
-* [GitHub Pages](https://pages.github.com)
-* [Font Awesome](https://fontawesome.com)
-* [React Icons](https://react-icons.github.io/react-icons/search)
+Project Link: ([https://github.com/lokyfx/ios-config-drift-detector.git](https://github.com/lokyfx/ios-config-drift-detector.git))
 
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
+
 
 
 
