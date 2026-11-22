@@ -24,9 +24,6 @@
 <!-- PROJECT LOGO -->
 <br />
 <div align="center">
-  <a href="https://github.com/othneildrew/Best-README-Template">
-    <img src="images/logo.png" alt="Logo" width="80" height="80">
-  </a>
 
   <h3 align="center">Cisco IOSv Configuration Drift Detector</h3>
 
@@ -37,38 +34,9 @@
 
 
 
-<!-- TABLE OF CONTENTS -->
-<details>
-  <summary>Table of Contents</summary>
-  <ol>
-    <li>
-      <a href="#about-the-project">About The Project</a>
-      <ul>
-        <li><a href="#built-with">Built With</a></li>
-      </ul>
-    </li>
-    <li>
-      <a href="#getting-started">Getting Started</a>
-      <ul>
-        <li><a href="#prerequisites">Prerequisites</a></li>
-        <li><a href="#installation">Installation</a></li>
-      </ul>
-    </li>
-    <li><a href="#usage">Usage</a></li>
-    <li><a href="#roadmap">Roadmap</a></li>
-    <li><a href="#contributing">Contributing</a></li>
-    <li><a href="#license">License</a></li>
-    <li><a href="#contact">Contact</a></li>
-    <li><a href="#acknowledgments">Acknowledgments</a></li>
-  </ol>
-</details>
-
-
 
 <!-- ABOUT THE PROJECT -->
 ## About The Project
-
-[![Product Name Screen Shot][product-screenshot]](https://example.com)
 
 A lightweight **NetDevOps** utility in Python that connects to a simulated Cisco IOSv router (`R1`) over SSH, pulls its current `running-config`, and compares it against an approved golden baseline (`r1_golden.cfg`) to detect configuration drift.
 
@@ -212,7 +180,31 @@ python3 drift_checker.py
 <p align="right">(<a href="#readme-top">back to top</a>)</p>
 
 
-<!--
+## Example Output
+When you run `python3 run.py`, it first retrieves the current configuration via `get_config.py` and then runs `drift_checker.py` against `golden_config.cfg`:
+
+Changes were made to the DCHP - dns-server configuration for demo.
+
+```sh
+(.venv) user@system:~/ios-config-drift-detector$ python3 run.py
+```
+```sh
+Config saved for R1.
+REMOVED: Changes were modified/removed
+REMOVED: - dns-server 1.1.1.1 
+ADDED: changes were modified/added
+ADDED: - dns-server 8.8.8.8
+```
+
+## Packet Capture via WireShark
+Inspecting the raw SSH traffic helps verify that TCP reachability, protocol version exchange, and legacy algorithm negotiation behave as expected before troubleshooting Netmiko or Paramiko.
+
+### 1. TCP 3-Way Handshake - (`SYN`, `SYN - ACK`, `ACK`) — Confirms IP routing and port 22 reachability between your host and R1 (`192.168.122.10`).
+<img width="1600" height="57" alt="Screenshot_20261122_220113" src="https://github.com/user-attachments/assets/4e4c4374-9f40-4524-aada-e13293c0dfed" />
+
+
+### 2. SSH-2.0 Banner Exchange — Both sides announce SSHv2 support + Key Exchange Both peers advertise supported key exchange (diffie-hellman-group14-sha1) and host key (ssh-rsa) algorithms.
+<img width="1600" height="204" alt="Screenshot_20261122_220210" src="https://github.com/user-attachments/assets/16575c1f-2a85-46b3-b89f-3334dbf44926" />
 
 
 
