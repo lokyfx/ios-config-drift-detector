@@ -44,12 +44,12 @@ def main() -> None:
         return
 
     if removed:
-        print("REMOVED: Changes were modified/removed")
+        print("UPDATE: Changes were modified")
         for line in removed:
             print(f"REMOVED: -{line}")
 
     if added:
-        print("ADDED: changes were modified/added")
+        print("UPDATE: Changes were modified")
         for line in added:
             print(f"ADDED: -{line}")
 
